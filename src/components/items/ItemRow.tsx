@@ -1,26 +1,26 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Check, Trash2 } from "lucide-react";
 import type { Item } from "@/models/types";
-import {
-  toggleItemAction,
-  editItemAction,
-  deleteItemAction,
-} from "@/controllers/item.controller";
 
-export function ItemRow({ item }: { item: Item }) {
-  const [done, setDone] = useState(item.isDone);
+/**
+ * Linha de item (apresentacional). A lógica otimista e as chamadas ao servidor
+ * ficam no ItemsBoard; aqui só cuidamos da UI e da edição inline.
+ */
+export function ItemRow({
+  item,
+  onToggle,
+  onEdit,
+  onDelete,
+}: {
+  item: Item;
+  onToggle: (isDone: boolean) => void;
+  onEdit: (content: string) => void;
+  onDelete: () => void;
+}) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(item.content);
-  const [removing, setRemoving] = useState(false);
-  const [, startTransition] = useTransition();
-
-  function toggle() {
-    const next = !done;
-    setDone(next); // otimista
-    startTransition(() => toggleItemAction(item.id, item.listId, next));
-  }
 
   function saveEdit() {
     setEditing(false);
@@ -29,32 +29,25 @@ export function ItemRow({ item }: { item: Item }) {
       setValue(item.content);
       return;
     }
-    startTransition(() => editItemAction(item.id, item.listId, trimmed));
-  }
-
-  function remove() {
-    setRemoving(true);
-    startTransition(() => deleteItemAction(item.id, item.listId));
+    onEdit(trimmed);
   }
 
   return (
-    <div
-      className={`card group flex items-center gap-3 px-4 py-3 transition-all ${
-        removing ? "opacity-40 scale-[0.98]" : ""
-      }`}
-    >
+    <div className="card group flex items-center gap-3 px-4 py-3 animate-in">
       {/* Checkbox */}
       <button
-        onClick={toggle}
-        aria-pressed={done}
-        aria-label={done ? "Desmarcar" : "Concluir"}
+        onClick={() => onToggle(!item.isDone)}
+        aria-pressed={item.isDone}
+        aria-label={item.isDone ? "Desmarcar" : "Concluir"}
         className={`size-6 shrink-0 rounded-full border-2 grid place-items-center transition-all active:scale-90 ${
-          done
+          item.isDone
             ? "bg-success border-success"
             : "border-border hover:border-muted"
         }`}
       >
-        {done && <Check className="size-3.5 text-bg" strokeWidth={3.5} />}
+        {item.isDone && (
+          <Check className="size-3.5 text-bg" strokeWidth={3.5} />
+        )}
       </button>
 
       {/* Conteúdo */}
@@ -76,18 +69,21 @@ export function ItemRow({ item }: { item: Item }) {
         />
       ) : (
         <button
-          onClick={() => setEditing(true)}
+          onClick={() => {
+            setValue(item.content);
+            setEditing(true);
+          }}
           className={`flex-1 text-left text-[15px] transition-colors ${
-            done ? "text-faint line-through" : "text-foreground"
+            item.isDone ? "text-faint line-through" : "text-foreground"
           }`}
         >
-          {value}
+          {item.content}
         </button>
       )}
 
       {/* Excluir */}
       <button
-        onClick={remove}
+        onClick={onDelete}
         aria-label="Excluir item"
         className="size-8 shrink-0 grid place-items-center rounded-lg text-faint hover:text-danger hover:bg-danger/10 transition-colors sm:opacity-0 sm:group-hover:opacity-100"
       >
