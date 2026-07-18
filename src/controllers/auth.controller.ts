@@ -4,22 +4,13 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { validateCredentials } from "@/lib/validation";
 import type { AuthState } from "./types";
 
 function readCredentials(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   return { email, password };
-}
-
-function validate(email: string, password: string): string | null {
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return "Informe um e-mail válido.";
-  }
-  if (password.length < 8) {
-    return "A senha precisa ter ao menos 8 caracteres.";
-  }
-  return null;
 }
 
 /** Login com e-mail e senha. */
@@ -32,7 +23,7 @@ export async function signInAction(
   }
 
   const { email, password } = readCredentials(formData);
-  const invalid = validate(email, password);
+  const invalid = validateCredentials(email, password);
   if (invalid) return { error: invalid };
 
   const supabase = await createClient();
@@ -56,7 +47,7 @@ export async function signUpAction(
   }
 
   const { email, password } = readCredentials(formData);
-  const invalid = validate(email, password);
+  const invalid = validateCredentials(email, password);
   if (invalid) return { error: invalid };
 
   const supabase = await createClient();

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { ItemModel } from "@/models/item.model";
+import { validateItemContent } from "@/lib/validation";
 import { requireUser } from "./session";
 import type { ActionState } from "./types";
 
@@ -13,9 +14,8 @@ export async function addItemAction(
   const user = await requireUser();
 
   const content = String(formData.get("content") ?? "").trim();
-  if (content.length < 1 || content.length > 500) {
-    return { error: "O item deve ter entre 1 e 500 caracteres." };
-  }
+  const invalid = validateItemContent(content);
+  if (invalid) return { error: invalid };
 
   await ItemModel.create(listId, user.id, content);
   revalidatePath(`/listas/${listId}`);
@@ -41,7 +41,7 @@ export async function editItemAction(
 ): Promise<void> {
   const user = await requireUser();
   const trimmed = content.trim();
-  if (trimmed.length < 1 || trimmed.length > 500) return;
+  if (validateItemContent(trimmed)) return;
   await ItemModel.updateContent(itemId, user.id, trimmed);
   revalidatePath(`/listas/${listId}`);
 }

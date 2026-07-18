@@ -4,13 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ListModel } from "@/models/list.model";
 import { LIST_COLORS, type ListColor } from "@/models/types";
+import { parseColor, validateListName } from "@/lib/validation";
 import { requireUser } from "./session";
 import type { ActionState } from "./types";
-
-function parseColor(value: FormDataEntryValue | null): ListColor {
-  const color = String(value ?? "violet") as ListColor;
-  return LIST_COLORS.includes(color) ? color : "violet";
-}
 
 /** Cria uma nova lista e navega até ela. */
 export async function createListAction(
@@ -22,9 +18,8 @@ export async function createListAction(
   const name = String(formData.get("name") ?? "").trim();
   const color = parseColor(formData.get("color"));
 
-  if (name.length < 1 || name.length > 80) {
-    return { error: "O nome deve ter entre 1 e 80 caracteres." };
-  }
+  const invalid = validateListName(name);
+  if (invalid) return { error: invalid };
 
   const list = await ListModel.create(user.id, name, color);
   revalidatePath("/listas");
@@ -41,7 +36,7 @@ export async function updateListAction(
   const payload: { name?: string; color?: ListColor } = {};
   if (typeof fields.name === "string") {
     const name = fields.name.trim();
-    if (name.length >= 1 && name.length <= 80) payload.name = name;
+    if (!validateListName(name)) payload.name = name;
   }
   if (fields.color && LIST_COLORS.includes(fields.color)) {
     payload.color = fields.color;
