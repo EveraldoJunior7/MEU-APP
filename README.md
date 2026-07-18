@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div align="center">
 
-## Getting Started
+# 📋 Organiza
 
-First, run the development server:
+### _Seu dia, no lugar._
+
+Um app **simples, bonito e direto** para organizar o seu dia a dia em listas —
+tarefas, compras, metas e o que mais você precisar. 💜
+
+<br/>
+
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=next.js)
+![React](https://img.shields.io/badge/React-19-20232A?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-4-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white)
+
+</div>
+
+---
+
+## ✨ O que dá pra fazer
+
+- ✅ **Criar listas** com nome e cor (tarefas, compras, ideias… você escolhe)
+- 📝 **Adicionar itens** e marcar como concluídos com um toque
+- ✏️ **Editar** um item tocando no texto e **excluir** quando quiser
+- 📊 Ver o **progresso** de cada lista de relance
+- 🔐 **Sua conta, seus dados** — cada pessoa só enxerga as próprias listas
+- 📱 **Feito para o celular** (mas funciona lindo no computador também)
+
+---
+
+## 🎨 Visual
+
+Interface **escura e elegante**, com um toque de vidro (glassmorphism) e um acento
+violeta suave. Pensada para ser agradável de usar todo dia, sem poluição.
+
+---
+
+## 🚀 Rodando no seu computador
+
+> Guia completo e sem pressa em **[SETUP.md](SETUP.md)**.
+
+Resumo rápido:
 
 ```bash
+# 1. Instalar as dependências
+npm install
+
+# 2. Configurar o banco (copie e preencha suas chaves do Supabase)
+cp .env.local.example .env.local
+
+# 3. Rodar
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Depois é só abrir **http://localhost:3000** 🎉
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🧱 Como o app é organizado
 
-## Learn More
+O código segue o padrão **MVC** — cada parte tem um papel bem definido, o que
+deixa tudo mais fácil de entender e crescer:
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── models/        🗃️  Os dados (o que é uma lista, um item) e como salvá-los
+├── controllers/   ⚙️   As regras (criar, editar, excluir, entrar/sair)
+├── app/           🖥️   As telas (login, listas, detalhe da lista)
+├── components/    🧩  As peças da interface (botões, cartões, formulários)
+└── lib/supabase/  🔌  A conexão com o banco de dados
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+> A ideia central: as **telas** nunca falam com o banco diretamente. Elas pedem
+> para os **controllers**, que usam os **models**. Trocar algo no futuro fica simples.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🔒 Segurança
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Cada usuário só acessa os **próprios dados** (Row Level Security no banco)
+- Login por e-mail e senha (mínimo 8 caracteres)
+- Sessão protegida por cookies e renovada automaticamente
+- Chaves sensíveis **nunca** vão para o navegador nem para o repositório
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🛣️ Próximos passos
+
+- [x] Listas com itens (tarefas, compras…)
+- [x] Autenticação e contas
+- [ ] 📅 Agenda / calendário
+- [ ] 🔔 Lembretes e notificações
+- [ ] 🔁 Reordenar itens arrastando
+
+---
+
+<div align="center">
+
+Feito com 💜 usando **Next.js**, **Supabase** e **Tailwind CSS**.
+
+</div>

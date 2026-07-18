@@ -24,6 +24,24 @@
 .DS_Store
 *.pem
 
+# arquivos do sistema operacional (Windows/macOS)
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# editores / IDEs
+.vscode/
+.idea/
+*.swp
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# configuração local do agente/CLI
+.claude/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
