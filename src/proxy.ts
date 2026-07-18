@@ -11,7 +11,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Aplica em todas as rotas, exceto estáticos e imagens.
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Aplica em todas as rotas, exceto estáticos, imagens e arquivos do PWA
+    // (manifesto e service worker precisam ser acessíveis sem sessão).
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,6 +18,16 @@ export const metadata: Metadata = {
   description:
     "Organize suas listas, tarefas e compras de um jeito simples, direto e bonito.",
   applicationName: "Organiza",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Organiza",
+  },
 };
 
 export const viewport: Viewport = {
@@ -36,7 +47,10 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        {children}
+        <RegisterServiceWorker />
+      </body>
     </html>
   );
 }
