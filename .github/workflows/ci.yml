@@ -22,7 +22,10 @@ jobs:
           cache: npm
 
       - name: Instalar dependências
-        run: npm ci
+        # Usamos `npm install` (e não `npm ci`) porque o lockfile é gerado no
+        # Windows e o runner é Linux — deps nativas opcionais por plataforma
+        # (@emnapi, lightningcss, swc…) fazem o `npm ci` reclamar de sync.
+        run: npm install --no-audit --no-fund
 
       - name: Lint
         run: npm run lint
