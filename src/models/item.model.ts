@@ -103,6 +103,32 @@ export const ItemModel = {
     if (error) throw new Error(error.message);
   },
 
+  /**
+   * Persiste a nova ordem: `position` recebe o índice de cada item na lista
+   * de ids fornecida.
+   */
+  async reorder(
+    listId: string,
+    userId: string,
+    orderedIds: string[],
+  ): Promise<void> {
+    const supabase = await createClient();
+
+    const results = await Promise.all(
+      orderedIds.map((id, index) =>
+        supabase
+          .from("items")
+          .update({ position: index })
+          .eq("id", id)
+          .eq("list_id", listId)
+          .eq("user_id", userId),
+      ),
+    );
+
+    const failed = results.find((r) => r.error);
+    if (failed?.error) throw new Error(failed.error.message);
+  },
+
   /** Remove um item. */
   async remove(id: string, userId: string): Promise<void> {
     const supabase = await createClient();

@@ -80,6 +80,17 @@ export async function updateItemFieldsAction(
   revalidatePath(`/listas/${listId}`);
 }
 
+/** Persiste a nova ordem dos itens de uma lista. */
+export async function reorderItemsAction(
+  listId: string,
+  orderedIds: string[],
+): Promise<void> {
+  const user = await requireUser();
+  if (!orderedIds.length) return;
+  await ItemModel.reorder(listId, user.id, orderedIds);
+  revalidatePath(`/listas/${listId}`);
+}
+
 /** Remove um item. */
 export async function deleteItemAction(
   itemId: string,

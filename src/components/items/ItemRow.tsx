@@ -24,10 +24,12 @@ const AXIS_LOCK = 10; // px para decidir se o gesto é horizontal ou vertical
 const MAX_SWIPE = 130;
 
 /**
- * Linha de item (apresentacional) com **swipe**:
- *  - deslizar para a direita → concluir/reabrir
- *  - deslizar para a esquerda → excluir
- * O `touch-action: pan-y` preserva o scroll vertical da lista.
+ * Linha de item (apresentacional) com **swipe** (deslizar p/ concluir ou
+ * excluir) e suporte a **reordenar** (alça de arraste via dnd-kit).
+ *
+ * O swipe usa trava de eixo + `touch-action: pan-y` (preserva o scroll) e é
+ * ignorado quando o gesto começa na alça de arraste (`[data-drag-handle]`),
+ * evitando conflito entre os dois gestos.
  */
 export function ItemRow({
   item,
@@ -35,18 +37,34 @@ export function ItemRow({
   onEdit,
   onDelete,
   onOpenDetails,
+  handle,
+  outerRef,
+  outerStyle,
+  outerAttributes,
+  isDragging,
 }: {
   item: Item;
   onToggle: (isDone: boolean) => void;
   onEdit: (content: string) => void;
   onDelete: () => void;
   onOpenDetails: () => void;
+  handle?: React.ReactNode;
+  outerRef?: React.Ref<HTMLDivElement>;
+  outerStyle?: React.CSSProperties;
+  outerAttributes?: React.HTMLAttributes<HTMLDivElement>;
+  isDragging?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(item.content);
   const [dx, setDx] = useState(0);
   const [swiping, setSwiping] = useState(false);
-  const g = useRef({ startX: 0, startY: 0, axis: "" as "" | "x" | "y", dx: 0 });
+  const g = useRef({
+    startX: 0,
+    startY: 0,
+    axis: "" as "" | "x" | "y",
+    dx: 0,
+    active: false,
+  });
 
   function saveEdit() {
     setEditing(false);
@@ -60,12 +78,20 @@ export function ItemRow({
 
   function onPointerDown(e: React.PointerEvent) {
     if (editing) return;
-    g.current = { startX: e.clientX, startY: e.clientY, axis: "", dx: 0 };
+    // gesto iniciado na alça de arraste? deixa o dnd-kit cuidar.
+    if ((e.target as HTMLElement).closest("[data-drag-handle]")) return;
+    g.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      axis: "",
+      dx: 0,
+      active: true,
+    };
   }
 
   function onPointerMove(e: React.PointerEvent) {
-    if (editing || !e.buttons) return;
     const cur = g.current;
+    if (!cur.active || !e.buttons) return;
     const ddx = e.clientX - cur.startX;
     const ddy = e.clientY - cur.startY;
 
@@ -85,12 +111,14 @@ export function ItemRow({
 
   function endGesture() {
     const cur = g.current;
+    if (!cur.active) return;
     if (cur.axis === "x") {
       if (cur.dx >= SWIPE_THRESHOLD) onToggle(!item.isDone);
       else if (cur.dx <= -SWIPE_THRESHOLD) onDelete();
     }
     cur.axis = "";
     cur.dx = 0;
+    cur.active = false;
     setDx(0);
     setSwiping(false);
   }
@@ -99,7 +127,14 @@ export function ItemRow({
   const hasMeta = Boolean(due || item.note);
 
   return (
-    <div className="relative rounded-[var(--radius)] overflow-hidden">
+    <div
+      ref={outerRef}
+      style={outerStyle}
+      {...outerAttributes}
+      className={`relative rounded-[var(--radius)] overflow-hidden ${
+        isDragging ? "z-10 opacity-80 shadow-xl" : ""
+      }`}
+    >
       {/* Fundo revelado pelo swipe */}
       <div className="absolute inset-0 flex items-center justify-between px-5">
         <span
@@ -118,7 +153,7 @@ export function ItemRow({
         </span>
       </div>
 
-      {/* Cartão (arrastável) */}
+      {/* Cartão (arrastável no eixo horizontal p/ swipe) */}
       <div
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -129,7 +164,7 @@ export function ItemRow({
           transition: swiping ? "none" : "transform 0.2s ease",
           touchAction: "pan-y",
         }}
-        className="card relative flex items-center gap-3 pl-4 pr-2 py-3 animate-in"
+        className="card relative flex items-center gap-2 pl-2 pr-2 py-3 animate-in overflow-hidden"
       >
         {/* Barra de prioridade */}
         {item.priority && (
@@ -139,6 +174,9 @@ export function ItemRow({
             aria-hidden
           />
         )}
+
+        {/* Alça de arraste (reordenar) */}
+        {handle}
 
         {/* Checkbox */}
         <button

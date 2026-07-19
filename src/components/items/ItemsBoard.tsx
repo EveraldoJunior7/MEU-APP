@@ -1,7 +1,34 @@
 "use client";
 
 import { useOptimistic, useRef, useState, useTransition } from "react";
-import { Plus, CheckCircle2, ClipboardList, AlertCircle } from "lucide-react";
+import {
+  Plus,
+  CheckCircle2,
+  ClipboardList,
+  AlertCircle,
+  GripVertical,
+} from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  arrayMove,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  restrictToVerticalAxis,
+  restrictToParentElement,
+} from "@dnd-kit/modifiers";
 import type { Item, ListColor } from "@/models/types";
 import { listColorStyles } from "@/lib/list-colors";
 import {
@@ -10,6 +37,7 @@ import {
   editItemAction,
   deleteItemAction,
   updateItemFieldsAction,
+  reorderItemsAction,
 } from "@/controllers/item.controller";
 import { ItemRow } from "./ItemRow";
 import { ItemSheet } from "./ItemSheet";
@@ -28,6 +56,7 @@ type OptimisticAction =
   | { type: "toggle"; id: string; isDone: boolean }
   | { type: "edit"; id: string; content: string }
   | { type: "update"; id: string; fields: ItemFields }
+  | { type: "reorder"; ids: string[] }
   | { type: "delete"; id: string };
 
 function reducer(state: Item[], action: OptimisticAction): Item[] {
@@ -46,9 +75,66 @@ function reducer(state: Item[], action: OptimisticAction): Item[] {
       return state.map((i) =>
         i.id === action.id ? { ...i, ...action.fields } : i,
       );
+    case "reorder": {
+      const byId = new Map(state.map((i) => [i.id, i]));
+      return action.ids
+        .map((id) => byId.get(id))
+        .filter((i): i is Item => Boolean(i));
+    }
     case "delete":
       return state.filter((i) => i.id !== action.id);
   }
+}
+
+/** Linha arrastável (usa o dnd-kit e fornece a alça de arraste ao ItemRow). */
+function SortableItem({
+  item,
+  onToggle,
+  onEdit,
+  onDelete,
+  onOpenDetails,
+}: {
+  item: Item;
+  onToggle: (isDone: boolean) => void;
+  onEdit: (content: string) => void;
+  onDelete: () => void;
+  onOpenDetails: () => void;
+}) {
+  const {
+    setNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const handle = (
+    <button
+      type="button"
+      data-drag-handle
+      aria-label="Arrastar para reordenar"
+      className="size-8 shrink-0 grid place-items-center rounded-lg text-faint hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
+      {...listeners}
+    >
+      <GripVertical className="size-4" />
+    </button>
+  );
+
+  return (
+    <ItemRow
+      item={item}
+      onToggle={onToggle}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      onOpenDetails={onOpenDetails}
+      handle={handle}
+      outerRef={setNodeRef}
+      outerStyle={{ transform: CSS.Transform.toString(transform), transition }}
+      outerAttributes={attributes}
+      isDragging={isDragging}
+    />
+  );
 }
 
 export function ItemsBoard({
@@ -66,6 +152,11 @@ export function ItemsBoard({
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const accent = listColorStyles[color].hex;
 
@@ -137,6 +228,23 @@ export function ItemsBoard({
   const pending = items.filter((i) => !i.isDone);
   const done = items.filter((i) => i.isDone);
 
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = pending.findIndex((i) => i.id === active.id);
+    const newIndex = pending.findIndex((i) => i.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    const newPending = arrayMove(pending, oldIndex, newIndex);
+    const ids = [...newPending.map((i) => i.id), ...done.map((i) => i.id)];
+
+    startTransition(async () => {
+      dispatch({ type: "reorder", ids });
+      await reorderItemsAction(listId, ids);
+    });
+  }
+
   return (
     <div className="space-y-5">
       {/* Resumo (otimista) */}
@@ -188,16 +296,32 @@ export function ItemsBoard({
         </div>
       ) : (
         <div className="space-y-2.5">
-          {pending.map((item) => (
-            <ItemRow
-              key={item.id}
-              item={item}
-              onToggle={(next) => handleToggle(item, next)}
-              onEdit={(content) => handleEdit(item, content)}
-              onDelete={() => handleDelete(item)}
-              onOpenDetails={() => setOpenId(item.id)}
-            />
-          ))}
+          {pending.length > 0 && (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+              modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+            >
+              <SortableContext
+                items={pending.map((i) => i.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2.5">
+                  {pending.map((item) => (
+                    <SortableItem
+                      key={item.id}
+                      item={item}
+                      onToggle={(next) => handleToggle(item, next)}
+                      onEdit={(content) => handleEdit(item, content)}
+                      onDelete={() => handleDelete(item)}
+                      onOpenDetails={() => setOpenId(item.id)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
 
           {done.length > 0 && (
             <div className="pt-4">
