@@ -82,6 +82,27 @@ export const ItemModel = {
     if (error) throw new Error(error.message);
   },
 
+  /** Atualiza os campos extras do item (prioridade, prazo, nota). */
+  async updateFields(
+    id: string,
+    userId: string,
+    fields: {
+      priority?: Item["priority"];
+      due_date?: string | null;
+      note?: string | null;
+    },
+  ): Promise<void> {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("items")
+      .update(fields)
+      .eq("id", id)
+      .eq("user_id", userId);
+
+    if (error) throw new Error(error.message);
+  },
+
   /** Remove um item. */
   async remove(id: string, userId: string): Promise<void> {
     const supabase = await createClient();

@@ -28,11 +28,15 @@ create table if not exists public.items (
   content    text not null check (char_length(content) between 1 and 500),
   is_done    boolean not null default false,
   position   integer not null default 0,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  priority   text check (priority in ('low', 'medium', 'high')),
+  due_date   date,
+  note       text check (note is null or char_length(note) <= 1000)
 );
 
 create index if not exists items_list_id_idx on public.items (list_id);
 create index if not exists items_user_id_idx on public.items (user_id);
+create index if not exists items_due_date_idx on public.items (due_date);
 
 -- =============================================================================
 --  Row Level Security — cada usuário só acessa os PRÓPRIOS dados.

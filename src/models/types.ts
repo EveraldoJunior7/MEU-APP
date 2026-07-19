@@ -30,6 +30,10 @@ export interface List {
   doneCount?: number;
 }
 
+/** Níveis de prioridade de um item. */
+export const PRIORITIES = ["low", "medium", "high"] as const;
+export type Priority = (typeof PRIORITIES)[number];
+
 export interface Item {
   id: string;
   listId: string;
@@ -38,6 +42,9 @@ export interface Item {
   isDone: boolean;
   position: number;
   createdAt: string;
+  priority: Priority | null;
+  dueDate: string | null;
+  note: string | null;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -60,6 +67,9 @@ export interface ItemRow {
   is_done: boolean;
   position: number;
   created_at: string;
+  priority: Priority | null;
+  due_date: string | null;
+  note: string | null;
 }
 
 export function mapListRow(row: ListRow): List {
@@ -81,5 +91,8 @@ export function mapItemRow(row: ItemRow): Item {
     isDone: row.is_done,
     position: row.position,
     createdAt: row.created_at,
+    priority: row.priority ?? null,
+    dueDate: row.due_date ?? null,
+    note: row.note ?? null,
   };
 }

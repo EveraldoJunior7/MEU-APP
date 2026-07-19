@@ -9,8 +9,10 @@ import {
   toggleItemAction,
   editItemAction,
   deleteItemAction,
+  updateItemFieldsAction,
 } from "@/controllers/item.controller";
 import { ItemRow } from "./ItemRow";
+import { ItemSheet } from "./ItemSheet";
 
 /**
  * Camada cliente que gerencia os itens de uma lista com **atualização
@@ -19,10 +21,13 @@ import { ItemRow } from "./ItemRow";
  * plano. Quando o servidor revalida, o estado real substitui o otimista.
  */
 
+type ItemFields = Pick<Item, "priority" | "dueDate" | "note">;
+
 type OptimisticAction =
   | { type: "add"; item: Item }
   | { type: "toggle"; id: string; isDone: boolean }
   | { type: "edit"; id: string; content: string }
+  | { type: "update"; id: string; fields: ItemFields }
   | { type: "delete"; id: string };
 
 function reducer(state: Item[], action: OptimisticAction): Item[] {
@@ -36,6 +41,10 @@ function reducer(state: Item[], action: OptimisticAction): Item[] {
     case "edit":
       return state.map((i) =>
         i.id === action.id ? { ...i, content: action.content } : i,
+      );
+    case "update":
+      return state.map((i) =>
+        i.id === action.id ? { ...i, ...action.fields } : i,
       );
     case "delete":
       return state.filter((i) => i.id !== action.id);
@@ -55,6 +64,7 @@ export function ItemsBoard({
   const [, startTransition] = useTransition();
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const accent = listColorStyles[color].hex;
@@ -76,6 +86,9 @@ export function ItemsBoard({
       isDone: false,
       position: Number.MAX_SAFE_INTEGER,
       createdAt: new Date().toISOString(),
+      priority: null,
+      dueDate: null,
+      note: null,
     };
     const formData = new FormData();
     formData.set("content", content);
@@ -111,6 +124,15 @@ export function ItemsBoard({
       await deleteItemAction(item.id, listId);
     });
   }
+
+  function handleUpdateFields(item: Item, fields: ItemFields) {
+    startTransition(async () => {
+      dispatch({ type: "update", id: item.id, fields });
+      await updateItemFieldsAction(item.id, listId, fields);
+    });
+  }
+
+  const openItem = openId ? items.find((i) => i.id === openId) : undefined;
 
   const pending = items.filter((i) => !i.isDone);
   const done = items.filter((i) => i.isDone);
@@ -172,7 +194,7 @@ export function ItemsBoard({
               item={item}
               onToggle={(next) => handleToggle(item, next)}
               onEdit={(content) => handleEdit(item, content)}
-              onDelete={() => handleDelete(item)}
+              onOpenDetails={() => setOpenId(item.id)}
             />
           ))}
 
@@ -191,13 +213,22 @@ export function ItemsBoard({
                     item={item}
                     onToggle={(next) => handleToggle(item, next)}
                     onEdit={(content) => handleEdit(item, content)}
-                    onDelete={() => handleDelete(item)}
+                    onOpenDetails={() => setOpenId(item.id)}
                   />
                 ))}
               </div>
             </div>
           )}
         </div>
+      )}
+
+      {openItem && (
+        <ItemSheet
+          item={openItem}
+          onClose={() => setOpenId(null)}
+          onSave={(fields) => handleUpdateFields(openItem, fields)}
+          onDelete={() => handleDelete(openItem)}
+        />
       )}
     </div>
   );
