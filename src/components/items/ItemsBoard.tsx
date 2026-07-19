@@ -194,6 +194,7 @@ export function ItemsBoard({
               item={item}
               onToggle={(next) => handleToggle(item, next)}
               onEdit={(content) => handleEdit(item, content)}
+              onDelete={() => handleDelete(item)}
               onOpenDetails={() => setOpenId(item.id)}
             />
           ))}
@@ -213,6 +214,7 @@ export function ItemsBoard({
                     item={item}
                     onToggle={(next) => handleToggle(item, next)}
                     onEdit={(content) => handleEdit(item, content)}
+                    onDelete={() => handleDelete(item)}
                     onOpenDetails={() => setOpenId(item.id)}
                   />
                 ))}
