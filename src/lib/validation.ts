@@ -1,4 +1,9 @@
-import { LIST_COLORS, type ListColor } from "@/models/types";
+import {
+  LIST_COLORS,
+  PRIORITIES,
+  type ListColor,
+  type Priority,
+} from "@/models/types";
 
 /**
  * Regras de validação puras (sem dependência de banco, rede ou React).
@@ -54,4 +59,29 @@ export function validateItemContent(content: string): string | null {
 export function parseColor(value: unknown): ListColor {
   const color = String(value ?? "violet") as ListColor;
   return LIST_COLORS.includes(color) ? color : "violet";
+}
+
+/** Normaliza uma prioridade; devolve null se ausente ou inválida. */
+export function parsePriority(value: unknown): Priority | null {
+  if (value === null || value === undefined || value === "") return null;
+  const p = String(value) as Priority;
+  return PRIORITIES.includes(p) ? p : null;
+}
+
+/**
+ * Normaliza uma data de prazo (formato YYYY-MM-DD). Devolve null se vazia
+ * ou fora do formato esperado.
+ */
+export function parseDueDate(value: unknown): string | null {
+  if (value === null || value === undefined || value === "") return null;
+  const s = String(value).trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null;
+}
+
+/** Normaliza uma nota, cortando espaços e limitando a 1000 caracteres. */
+export function parseNote(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  const s = String(value).trim();
+  if (!s) return null;
+  return s.slice(0, 1000);
 }

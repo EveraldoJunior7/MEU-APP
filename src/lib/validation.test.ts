@@ -5,6 +5,9 @@ import {
   validateListName,
   validateItemContent,
   parseColor,
+  parsePriority,
+  parseDueDate,
+  parseNote,
 } from "./validation";
 
 describe("isValidEmail", () => {
@@ -81,5 +84,48 @@ describe("parseColor", () => {
     expect(parseColor(null)).toBe("violet");
     expect(parseColor(undefined)).toBe("violet");
     expect(parseColor(123)).toBe("violet");
+  });
+});
+
+describe("parsePriority", () => {
+  it("mantém prioridades válidas", () => {
+    expect(parsePriority("low")).toBe("low");
+    expect(parsePriority("medium")).toBe("medium");
+    expect(parsePriority("high")).toBe("high");
+  });
+
+  it("devolve null para ausente ou inválida", () => {
+    expect(parsePriority(null)).toBeNull();
+    expect(parsePriority("")).toBeNull();
+    expect(parsePriority("urgentíssima")).toBeNull();
+  });
+});
+
+describe("parseDueDate", () => {
+  it("aceita datas no formato YYYY-MM-DD", () => {
+    expect(parseDueDate("2026-07-20")).toBe("2026-07-20");
+  });
+
+  it("devolve null para vazio ou formato inválido", () => {
+    expect(parseDueDate("")).toBeNull();
+    expect(parseDueDate(null)).toBeNull();
+    expect(parseDueDate("20/07/2026")).toBeNull();
+    expect(parseDueDate("amanhã")).toBeNull();
+  });
+});
+
+describe("parseNote", () => {
+  it("corta espaços e mantém o texto", () => {
+    expect(parseNote("  detalhe  ")).toBe("detalhe");
+  });
+
+  it("devolve null para vazio", () => {
+    expect(parseNote("")).toBeNull();
+    expect(parseNote("   ")).toBeNull();
+    expect(parseNote(null)).toBeNull();
+  });
+
+  it("limita a 1000 caracteres", () => {
+    expect(parseNote("a".repeat(1200))?.length).toBe(1000);
   });
 });

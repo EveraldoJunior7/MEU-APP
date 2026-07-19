@@ -82,6 +82,53 @@ export const ItemModel = {
     if (error) throw new Error(error.message);
   },
 
+  /** Atualiza os campos extras do item (prioridade, prazo, nota). */
+  async updateFields(
+    id: string,
+    userId: string,
+    fields: {
+      priority?: Item["priority"];
+      due_date?: string | null;
+      note?: string | null;
+    },
+  ): Promise<void> {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("items")
+      .update(fields)
+      .eq("id", id)
+      .eq("user_id", userId);
+
+    if (error) throw new Error(error.message);
+  },
+
+  /**
+   * Persiste a nova ordem: `position` recebe o índice de cada item na lista
+   * de ids fornecida.
+   */
+  async reorder(
+    listId: string,
+    userId: string,
+    orderedIds: string[],
+  ): Promise<void> {
+    const supabase = await createClient();
+
+    const results = await Promise.all(
+      orderedIds.map((id, index) =>
+        supabase
+          .from("items")
+          .update({ position: index })
+          .eq("id", id)
+          .eq("list_id", listId)
+          .eq("user_id", userId),
+      ),
+    );
+
+    const failed = results.find((r) => r.error);
+    if (failed?.error) throw new Error(failed.error.message);
+  },
+
   /** Remove um item. */
   async remove(id: string, userId: string): Promise<void> {
     const supabase = await createClient();
