@@ -9,6 +9,7 @@ import {
 } from "@/controllers/list.controller";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { Portal } from "@/components/ui/Portal";
 import { ColorPicker } from "./ColorPicker";
 
 export function ListOptions({
@@ -26,8 +27,13 @@ export function ListOptions({
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    if (open) window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
     };
   }, [open]);
 
@@ -55,6 +61,7 @@ export function ListOptions({
       </button>
 
       {open && (
+        <Portal>
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
           role="dialog"
@@ -147,6 +154,7 @@ export function ListOptions({
             </div>
           </div>
         </div>
+        </Portal>
       )}
     </>
   );
