@@ -7,6 +7,7 @@ import type { ActionState } from "@/controllers/types";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { Portal } from "@/components/ui/Portal";
 import { ColorPicker } from "./ColorPicker";
 
 export function NewListSheet() {
@@ -37,6 +38,7 @@ export function NewListSheet() {
       </Button>
 
       {open && (
+        <Portal>
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
           role="dialog"
@@ -93,6 +95,7 @@ export function NewListSheet() {
             </form>
           </div>
         </div>
+        </Portal>
       )}
     </>
   );

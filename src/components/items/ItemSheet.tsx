@@ -6,6 +6,7 @@ import type { Item, Priority } from "@/models/types";
 import { PRIORITIES } from "@/models/types";
 import { priorityStyles } from "@/lib/priority";
 import { Button } from "@/components/ui/Button";
+import { Portal } from "@/components/ui/Portal";
 
 /**
  * Editor de um item (bottom sheet): prioridade, prazo, nota e excluir.
@@ -32,10 +33,15 @@ export function ItemSheet({
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
     };
-  }, []);
+  }, [onClose]);
 
   function save() {
     onSave({
@@ -47,12 +53,13 @@ export function ItemSheet({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Detalhes do item"
-    >
+    <Portal>
+      <div
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Detalhes do item"
+      >
       <button
         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in"
         aria-label="Fechar"
@@ -173,6 +180,7 @@ export function ItemSheet({
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </Portal>
   );
 }
