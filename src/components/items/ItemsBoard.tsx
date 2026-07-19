@@ -68,10 +68,14 @@ type OptimisticAction =
   | { type: "reorder"; ids: string[] }
   | { type: "delete"; id: string };
 
+/** Item ainda não persistido (id otimista, sem UUID real no banco). */
+const isTempId = (id: string) => id.startsWith("temp-");
+
 function reducer(state: Item[], action: OptimisticAction): Item[] {
   switch (action.type) {
     case "add":
-      return [...state, action.item];
+      // novo item entra no topo da lista
+      return [action.item, ...state];
     case "toggle":
       return state.map((i) =>
         i.id === action.id ? { ...i, isDone: action.isDone } : i,
@@ -194,7 +198,7 @@ export function ItemsBoard({
       userId: "",
       content,
       isDone: false,
-      position: Number.MAX_SAFE_INTEGER,
+      position: Number.MIN_SAFE_INTEGER,
       createdAt: new Date().toISOString(),
       priority: null,
       dueDate: null,
@@ -216,21 +220,23 @@ export function ItemsBoard({
     }
     startTransition(async () => {
       dispatch({ type: "toggle", id: item.id, isDone });
-      await toggleItemAction(item.id, listId, isDone);
+      if (!isTempId(item.id)) await toggleItemAction(item.id, listId, isDone);
     });
   }
 
   function handleEdit(item: Item, content: string) {
     startTransition(async () => {
       dispatch({ type: "edit", id: item.id, content });
-      await editItemAction(item.id, listId, content);
+      if (!isTempId(item.id)) await editItemAction(item.id, listId, content);
     });
   }
 
   function handleUpdateFields(item: Item, fields: ItemFields) {
     startTransition(async () => {
       dispatch({ type: "update", id: item.id, fields });
-      await updateItemFieldsAction(item.id, listId, fields);
+      if (!isTempId(item.id)) {
+        await updateItemFieldsAction(item.id, listId, fields);
+      }
     });
   }
 
@@ -247,7 +253,7 @@ export function ItemsBoard({
     setPendingDelete((cur) => (cur?.id === item.id ? null : cur));
     startTransition(async () => {
       dispatch({ type: "delete", id: item.id });
-      await deleteItemAction(item.id, listId);
+      if (!isTempId(item.id)) await deleteItemAction(item.id, listId);
     });
   }
 
@@ -296,7 +302,9 @@ export function ItemsBoard({
 
     startTransition(async () => {
       dispatch({ type: "reorder", ids });
-      await reorderItemsAction(listId, ids);
+      // não persiste ids ainda temporários (evita erro de UUID no banco)
+      const persistIds = ids.filter((id) => !isTempId(id));
+      if (persistIds.length) await reorderItemsAction(listId, persistIds);
     });
   }
 
