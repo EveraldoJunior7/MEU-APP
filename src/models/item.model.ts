@@ -22,7 +22,7 @@ export const ItemModel = {
     return (data ?? []).map((row) => mapItemRow(row as ItemRow));
   },
 
-  /** Cria um item no fim da lista. */
+  /** Cria um item no TOPO da lista (menor posição). */
   async create(
     listId: string,
     userId: string,
@@ -30,12 +30,17 @@ export const ItemModel = {
   ): Promise<Item> {
     const supabase = await createClient();
 
-    // posição = quantidade atual de itens (adiciona ao fim)
-    const { count } = await supabase
+    // posição = (menor posição atual) - 1, para o item aparecer no topo
+    const { data: firstRow } = await supabase
       .from("items")
-      .select("*", { count: "exact", head: true })
+      .select("position")
       .eq("list_id", listId)
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .order("position", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    const position = firstRow ? firstRow.position - 1 : 0;
 
     const { data, error } = await supabase
       .from("items")
@@ -43,7 +48,7 @@ export const ItemModel = {
         list_id: listId,
         user_id: userId,
         content,
-        position: count ?? 0,
+        position,
       })
       .select("*")
       .single();
