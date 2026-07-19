@@ -100,3 +100,12 @@ export async function deleteItemAction(
   await ItemModel.remove(itemId, user.id);
   revalidatePath(`/listas/${listId}`);
 }
+
+/** Remove todos os itens concluídos de uma lista. */
+export async function clearCompletedItemsAction(
+  listId: string,
+): Promise<void> {
+  const user = await requireUser();
+  await ItemModel.removeCompleted(listId, user.id);
+  revalidatePath(`/listas/${listId}`);
+}

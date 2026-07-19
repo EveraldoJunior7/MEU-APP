@@ -141,4 +141,18 @@ export const ItemModel = {
 
     if (error) throw new Error(error.message);
   },
+
+  /** Remove todos os itens concluídos de uma lista. */
+  async removeCompleted(listId: string, userId: string): Promise<void> {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("items")
+      .delete()
+      .eq("list_id", listId)
+      .eq("user_id", userId)
+      .eq("is_done", true);
+
+    if (error) throw new Error(error.message);
+  },
 };
